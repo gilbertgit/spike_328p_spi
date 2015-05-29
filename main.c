@@ -9,8 +9,8 @@
 #include <util/delay.h>
 #include <avr/interrupt.h>
 
-//#define MASTER
-#define SLAVE
+#define MASTER
+//#define SLAVE
 
 #define ACK 0x7E
 
@@ -47,13 +47,22 @@ int main(void) {
 	while (1) {
 
 		PORTB &= ~(1 << PB2);			// SS low
-		result = SPIMasterSend(0x01);// READ error_num (register 0x01)
+		result = SPIMasterSend(0x82);// WRITE frame (register 0x02)
+		result = SPIMasterSend(0xAB);// dummy send to read the data
+		result = SPIMasterSend(0xCD);// dummy send to read the data
+		result = SPIMasterSend(0xEF);// dummy send to read the data
+		PORTB |= (1 << PB2);// SS high
+
+
+		PORTB &= ~(1 << PB2);			// SS low
+		result = SPIMasterSend(0x01);// READ error_num (register 0x01) and frame[0..2]
+		result = SPIMasterSend(0xFF);// dummy send to read the data
 		result = SPIMasterSend(0xFF);// dummy send to read the data
 		result = SPIMasterSend(0xFF);// dummy send to read the data
 		result = SPIMasterSend(0xFF);// dummy send to read the data
 		PORTB |= (1 << PB2);// SS high
 
-		if (result == 0x12) {
+		if (result == 0xEF) {
 			PORTC ^= _BV(PC1);
 			PORTC &= ~(_BV(PC2));
 		} else {
