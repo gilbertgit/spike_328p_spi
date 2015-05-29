@@ -16,14 +16,21 @@
 
 #ifdef MASTER
 
-//SPI init
 void SPIMasterInit(void) {
-//set MOSI, SCK and SS as output
+	//set MOSI, SCK and SS as output
 	DDRB |= (1 << PB3) | (1 << PB5) | (1 << PB2);
-//set SS to high
+
+	//set SS to high
 	PORTB |= (1 << PB2);
-//enable master and clock fosc/128
+
+	//enable master and clock fosc/128
 	SPCR = (1 << SPE) | (1 << MSTR) | (1<< SPR1) | (1 << SPR0);
+
+	//enable master and clock fosc/64
+//	SPCR = (1 << SPE) | (1 << MSTR) | (1<< SPR1) | (0 << SPR0);
+
+	//enable master and clock fosc/116
+//	SPCR = (1 << SPE) | (1 << MSTR) | (0<< SPR1) | (1 << SPR0);
 }
 
 uint8_t SPIMasterSend(uint8_t data) {
@@ -52,7 +59,6 @@ int main(void) {
 		result = SPIMasterSend(0xCD);// dummy send to read the data
 		result = SPIMasterSend(0xEF);// dummy send to read the data
 		PORTB |= (1 << PB2);// SS high
-
 
 		PORTB &= ~(1 << PB2);			// SS low
 		result = SPIMasterSend(0x01);// READ error_num (register 0x01) and frame[0..2]
@@ -147,10 +153,15 @@ ISR(PCINT0_vect) {
 ISR(SPI_STC_vect) {
 	// DEFINITELY TRIGGERING AFTER EACH BYTE RECEIVED
 
+	// CAN THIS BE OPTIMIZED ??  It seems that this code takes
+	// about 3.78us to 6.04us to execute and unless the master
+	// is running at /128, it is too fast.
+
+	PORTC |= _BV(PC1);
+
 	uint8_t data = SPDR;
 
 	if (spi_sof == SPI_SOF_TRUE) {
-		PORTC ^= _BV(PC1);
 		spi_mode = (data & SPI_MODE_MASK);
 		spi_register = registry_index[data & SPI_REGISTER_MASK];
 	}
@@ -162,6 +173,8 @@ ISR(SPI_STC_vect) {
 	}
 
 	spi_sof = SPI_SOF_FALSE;
+
+	PORTC &= ~(_BV(PC1));
 }
 
 // Monitor SS to set state to idle on transition to HIGH
@@ -179,7 +192,7 @@ int main(void) {
 	registry.frame[5] = 0x00;
 
 	DDRC |= _BV(PC1);
-	//PORTC &= ~(_BV(PC1)); // turn off the pullup
+	PORTC &= ~(_BV(PC1)); // turn off
 
 	SPISlaveInit();
 	sei();

@@ -66,25 +66,28 @@ Disassembly of section .text:
   7c:	0c 94 00 00 	jmp	0	; 0x0 <__vectors>
 
 00000080 <SPIMasterInit>:
+
 #ifdef MASTER
 
-//SPI init
 void SPIMasterInit(void) {
-//set MOSI, SCK and SS as output
+	//set MOSI, SCK and SS as output
 	DDRB |= (1 << PB3) | (1 << PB5) | (1 << PB2);
   80:	84 b1       	in	r24, 0x04	; 4
   82:	8c 62       	ori	r24, 0x2C	; 44
   84:	84 b9       	out	0x04, r24	; 4
-//set SS to high
+
+	//set SS to high
 	PORTB |= (1 << PB2);
   86:	2a 9a       	sbi	0x05, 2	; 5
-//enable master and clock fosc/128
+
+	//enable master and clock fosc/128
 	SPCR = (1 << SPE) | (1 << MSTR) | (1<< SPR1) | (1 << SPR0);
   88:	83 e5       	ldi	r24, 0x53	; 83
   8a:	8c bd       	out	0x2c, r24	; 44
   8c:	08 95       	ret
 
 0000008e <SPIMasterSend>:
+//	SPCR = (1 << SPE) | (1 << MSTR) | (0<< SPR1) | (1 << SPR0);
 }
 
 uint8_t SPIMasterSend(uint8_t data) {
@@ -143,7 +146,6 @@ int main(void) {
   bc:	0e 94 47 00 	call	0x8e	; 0x8e <SPIMasterSend>
 		PORTB |= (1 << PB2);// SS high
   c0:	2a 9a       	sbi	0x05, 2	; 5
-
 
 		PORTB &= ~(1 << PB2);			// SS low
   c2:	2a 98       	cbi	0x05, 2	; 5
