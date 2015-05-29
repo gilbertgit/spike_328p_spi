@@ -12,9 +12,6 @@ RM := rm -rf
 -include objects.mk
 
 ifneq ($(MAKECMDGOALS),clean)
-ifneq ($(strip $(C_DEPS)),)
--include $(C_DEPS)
-endif
 ifneq ($(strip $(ASM_DEPS)),)
 -include $(ASM_DEPS)
 endif
@@ -24,6 +21,9 @@ endif
 ifneq ($(strip $(S_UPPER_DEPS)),)
 -include $(S_UPPER_DEPS)
 endif
+ifneq ($(strip $(C_DEPS)),)
+-include $(C_DEPS)
+endif
 endif
 
 -include ../makefile.defs
@@ -31,6 +31,9 @@ endif
 # Add inputs and outputs from these tool invocations to the build variables 
 LSS += \
 spike_328p_spi.lss \
+
+FLASH_IMAGE += \
+spike_328p_spi.hex \
 
 SIZEDUMMY += \
 sizedummy \
@@ -53,6 +56,12 @@ spike_328p_spi.lss: spike_328p_spi.elf
 	@echo 'Finished building: $@'
 	@echo ' '
 
+spike_328p_spi.hex: spike_328p_spi.elf
+	@echo 'Create Flash image (ihex format)'
+	-avr-objcopy -R .eeprom -R .fuse -R .lock -R .signature -O ihex spike_328p_spi.elf  "spike_328p_spi.hex"
+	@echo 'Finished building: $@'
+	@echo ' '
+
 sizedummy: spike_328p_spi.elf
 	@echo 'Invoking: Print Size'
 	-avr-size --format=avr --mcu=atmega328p spike_328p_spi.elf
@@ -61,10 +70,10 @@ sizedummy: spike_328p_spi.elf
 
 # Other Targets
 clean:
-	-$(RM) $(OBJS)$(C_DEPS)$(ASM_DEPS)$(ELFS)$(LSS)$(S_DEPS)$(SIZEDUMMY)$(S_UPPER_DEPS) spike_328p_spi.elf
+	-$(RM) $(FLASH_IMAGE)$(ELFS)$(OBJS)$(ASM_DEPS)$(S_DEPS)$(SIZEDUMMY)$(S_UPPER_DEPS)$(LSS)$(C_DEPS) spike_328p_spi.elf
 	-@echo ' '
 
-secondary-outputs: $(LSS) $(SIZEDUMMY)
+secondary-outputs: $(LSS) $(FLASH_IMAGE) $(SIZEDUMMY)
 
 .PHONY: all clean dependents
 .SECONDARY:
